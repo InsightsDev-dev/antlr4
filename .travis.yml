@@ -1,37 +1,71 @@
-sudo: true
-language: java
-script:
-  - mvn install
-
-jdk:
-  - openjdk6
-  - oraclejdk7
-  - oraclejdk8
-
-before_install:
-  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-  - sudo add-apt-repository ppa:fkrull/deadsnakes -y
-  - sudo add-apt-repository ppa:rwky/nodejs -y
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq python3.5
-  - sudo apt-get install -qq nodejs
-  - echo "deb http://download.mono-project.com/repo/debian wheezy/snapshots/3.12.1 main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
-  - sudo apt-get install -qq mono-complete
-  - eval "$(sudo gimme 1.7.3)"
-  - go version ; go env
-  - python --version
-  - python3 --version
-
-env:
-  - CXX=g++-5
-
-compiler:
-  - clang
-
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
-      - g++-5
-      - uuid-dev
+    - g++-5
+    - uuid-dev
+    sources:
+    - ubuntu-toolchain-r-test
+  artifacts:
+    debug: true
+    paths:
+    - libs.zip
+    - build.zip
+    - testbuild.zip
+    - jacoco.exec
+    target_paths: b269f1d6-7de1-4b02-83b0-5ea834fce377
+after_success:
+- ' wget --content-disposition http://search.maven.org/remotecontent?filepath=org/jacoco/jacoco/0.7.7.201606060606/jacoco-0.7.7.201606060606.zip '
+- ' unzip -o jacoco-0.7.7.201606060606.zip  '
+- ' cd lib  '
+- ' mv * ../  '
+- ' cd ..  '
+- ' chmod a+x *  '
+- ' cd $PWD  '
+- ' rm  ''jacoco.exec'''
+- ' export JAVA_TOOL_OPTIONS=-javaagent:$PWD/jacocoagent.jar=destfile=$PWD/jacoco.exec,append=true  '
+- ' travis_wait 360 mvn  test -Dmaven.test.failure.ignore=true -Djacoco.skip=true
+  -Dcobertura.skip=true -Dmaven.clover.skip=true -Dmaven.javadoc.skip=true -Drat.skip=true
+  -Drat.ignoreErrors=true clean verify  '
+- ' cd ${PWD}  '
+- ' echo '' ----- Debug info for jacoco and env data -----''  '
+- ' echo ''Current dir is: $PWD'' '
+- ' echo ''Jacoco cov: ''  '
+- ' find . -name ''*.exec''  '
+- ' echo '' ----------------------------------------------'' '
+- ./df-build.sh
+before_install:
+- sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+- sudo add-apt-repository ppa:fkrull/deadsnakes -y
+- sudo add-apt-repository ppa:rwky/nodejs -y
+- sudo apt-get update -qq
+- sudo apt-get install -qq python3.5
+- sudo apt-get install -qq nodejs
+- echo "deb http://download.mono-project.com/repo/debian wheezy/snapshots/3.12.1 main"
+  | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
+- sudo apt-get install -qq mono-complete
+- eval "$(sudo gimme 1.7.3)"
+- go version ; go env
+- python --version
+- python3 --version
+branches: ''
+cache:
+  directories:
+  - $HOME/.m2
+compiler:
+- clang
+env:
+- CXX=g++-5
+jdk:
+- oraclejdk8
+language: java
+notifications:
+  webhooks:
+    on_failure: always
+    on_start: always
+    on_success: always
+    urls:
+    - http://insights-portal-insights-service-webserver-dev.public-swarm.devfactory.com/travisWebHookListener?build_id=b269f1d6-7de1-4b02-83b0-5ea834fce377
+script:
+- mvn install
+sudo: true
+# Modified by Insights Service at 2016-11-09 19:04:27.241956
